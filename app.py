@@ -13,6 +13,9 @@ if 'conversation' not in st.session_state:
     st.session_state.conversation = []
 if 'turn' not in st.session_state:
     st.session_state.turn = 0
+if 'awaiting_follow_up' not in st.session_state:
+    st.session_state.awaiting_follow_up = False
+
 st.title("Confused Student Simulation Bot")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 def extract_text_from_pdf(uploaded_file):
@@ -103,8 +106,14 @@ if text:
                 st.session_state.conversation[-1][0],
                 user_input
             )
-            if st.session_state.turn < 5:
-                with st.spinner("Thinking..."):
-                    follow_up = generate_confused_question(text, st.session_state.conversation)
-                    st.session_state.conversation.append((follow_up, ""))
-                    st.session_state.turn += 1
+            st.session_state.awaiting_follow_up = True
+            st.rerun()
+
+    if st.session_state.awaiting_follow_up and st.session_state.turn < 5:
+        with st.spinner("Thinking..."):
+            follow_up = generate_confused_question(text, st.session_state.conversation)
+            st.session_state.conversation.append((follow_up, ""))
+            st.session_state.turn += 1
+            st.session_state.awaiting_follow_up = False
+            st.rerun()
+
